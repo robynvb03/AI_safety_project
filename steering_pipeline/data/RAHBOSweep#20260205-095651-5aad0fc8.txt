@@ -1,0 +1,17 @@
+seed = 1
+alpha = 0.5
+beta_f = 1.0
+beta_var = 1.0
+k = 5
+lambda_reg = 1e-06
+num_restarts = 15
+raw_samples = 256
+n_init = 8
+n_iter = 50
+device = 'cpu'
+dtype = 'double'
+
+x_best_0 = -0.015912921909983425
+x_best_1 = -0.060369303032489226
+y_best_mean = 0.08277886952324588
+var_best = 0.0032619509717909073

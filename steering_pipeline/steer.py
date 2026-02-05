@@ -8,7 +8,7 @@ REPETITIONS = 3
 OUTPUT_FILE = "outputs.txt"
 STEERING_VEC_FILE = "steering_vec.txt"
 PROMPT_FILE = "prompt.txt"
-PROMPT = "It's raining cats and dogs"
+PROMPT = "Hello my name is"
 
 model = HookedTransformer.from_pretrained(MODEL_NAME)
 
@@ -69,7 +69,14 @@ class prompt_generator:
 
         return outputs
 
+def black_box_steering(steering_vector, prompt=PROMPT, m=REPETITIONS, out_file=OUTPUT_FILE):
 
+    gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
+    _ = gen(prompt, steering_vector, m=m, out_file=out_file)
+    score = classify(out_file)
+
+    return score
+
+ 
 if __name__ == "__main__":
-    gen = prompt_generator()
-    results = gen(PROMPT, STEERING_VECTOR1, REPETITIONS)
+    black_box_steering(STEERING_VECTOR1)

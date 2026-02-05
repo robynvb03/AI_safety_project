@@ -1,6 +1,5 @@
 import torch
 import math
-import pytry
 from dataclasses import dataclass
 from typing import Callable, Dict, Any, Optional
 from botorch.models import SingleTaskGP
@@ -9,11 +8,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.optim import optimize_acqf
 from botorch.acquisition.analytic import AnalyticAcquisitionFunction
 
-# -------------------------
-# Objective interface
-# -------------------------
-# You provide: eval_one(x: (d,)) -> scalar float/tensor
-# This RAHBO runner will call it k times to estimate noise.
+# You provide: eval_one(x: (d,))
 EvalOneFn = Callable[[torch.Tensor], float]
 
 
@@ -29,7 +24,7 @@ class RAHBOConfig:
 
 
 class RiskAverseUCB(AnalyticAcquisitionFunction):
-    """acq(x) = UCB_f(x) - alpha * LCB_var(x) where var model is on log(var)."""
+    # acq(x) = UCB_f(x) - alpha * LCB_var(x) where var model is on log(var).
 
     def __init__(self, model_f, model_logvar, alpha: float, beta_f: float, beta_var: float):
         super().__init__(model=model_f)
@@ -101,16 +96,12 @@ def fit_logvar_gp(X: torch.Tensor, S2: torch.Tensor) -> SingleTaskGP:
 
 
 def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_iter: int, cfg: RAHBOConfig, seed: int = 0, ) -> Dict[str, Any]:
-    """
-    bounds: (2, d)
-    eval_one: function taking x (d,) returning scalar
-    """
+
     torch.manual_seed(seed)
     device = bounds.device
     dtype = bounds.dtype
     d = bounds.shape[1]
 
-    # ---- initial design ----
     X = bounds[0] + (bounds[1] - bounds[0]) * torch.rand(n_init, d, device=device, dtype=dtype)
 
     Y_mean_list = []
@@ -125,22 +116,21 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
     Y_mean = torch.cat(Y_mean_list, dim=0)    # (n,1)
     S2 = torch.cat(S2_list, dim=0)            # (n,1)
 
-    # ---- BO loop ----
+    #RAHBO loop 
     for t in range(1, n_iter + 1):
         # Fit var model on log variance
-
         model_logvar = fit_logvar_gp(X, S2)
 
-        # Observation noise for the mean-of-k is S2/k (plus tiny reg)
+        # Observation noise for the mean-of-k is S2/k (plus tiny reg for stability)
         Yvar_mean = (S2 / cfg.k).clamp_min(1e-12) + cfg.lambda_reg
 
-        # Fit mean model with heteroscedastic noise
+        # Fit mean model (with heteroskedatsic noise)
         model_f = fit_mean_gp(X, Y_mean, Yvar_mean)
 
         # Risk-averse acquisition
         acq = RiskAverseUCB(model_f, model_logvar, cfg.alpha, cfg.beta_f, cfg.beta_var)
 
-        # Pick next x bny maximizing acquisition
+        # Pick next x by maximizing RAUCB
         x_next, _ = optimize_acqf(
             acq_function=acq,
             bounds=bounds,
@@ -148,9 +138,8 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
             num_restarts=cfg.num_restarts,
             raw_samples=cfg.raw_samples,
         )
-        x_next = x_next.squeeze(0)  # (d,)
+        x_next = x_next.squeeze(0)
 
-        # Evaluate k times at x_next
         yk = evaluate_k(eval_one, x_next, cfg.k, dtype, device)
         m_next = yk.mean(dim=0)                                   # (1,1)
         s2_next = yk.var(dim=0, unbiased=True).clamp_min(1e-12)    # (1,1)
@@ -161,6 +150,7 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
         S2 = torch.cat([S2, s2_next], dim=0)
 
         best_i = Y_mean.argmax().item()
+        #debug printing 
         #print(f"iter {t:02d} | best_mean={Y_mean[best_i].item():.4f} | best_x={X[best_i].tolist()} | var={S2[best_i].item():.4f}")
 
     best_i = Y_mean.argmax().item()
@@ -172,83 +162,3 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
         "y_best": Y_mean[best_i],
         "var_best": S2[best_i],
     }
-
-
-def test_eval_one(x: torch.Tensor) -> float:
-    """
-    2D test function:
-    f(x, y) = -(x^2 + y^2) + noise
-    - Maximum at (0, 0)
-    - Noise (jitter) increases slightly with radius
-    """
-    x1, x2 = x.tolist()
-    mean = -(x1 ** 2 + x2 ** 2)
-    radius = math.sqrt(x1**2 + x2**2)
-    noise_std = 0.05 + 0.2 * radius
-    return mean + noise_std * torch.randn(1).item()
-
-class RAHBOSweep(pytry.Trial):
-    def params(self):
-        self.param("risk aversion", alpha=1.0)
-        self.param("exploration on mean", beta_f=2.0)
-        self.param("conservativeness on variance", beta_var=2.0)
-
-        self.param("k repeats per x", k=5)
-        self.param("lambda reg", lambda_reg=1e-6)
-        self.param("num restarts", num_restarts=15)
-        self.param("raw samples", raw_samples=256)
-        self.param("n_init", n_init=8)
-        self.param("n_iter", n_iter=50)
-        self.param("device", device="cuda")
-        self.param("dtype", dtype="double")
-
-    def evaluate(self, p):
-        device = torch.device(p.device)
-        dtype = torch.double if p.dtype == "double" else torch.float
-
-        bounds = torch.tensor(
-            [[-1.0, -1.0],
-             [ 1.0,  1.0]],
-            device=device,
-            dtype=dtype,
-        )
-
-        cfg = RAHBOConfig(
-            alpha=float(p.alpha),
-            beta_f=float(p.beta_f),
-            beta_var=float(p.beta_var),
-            k=int(p.k),
-            lambda_reg=float(p.lambda_reg),
-            num_restarts=int(p.num_restarts),
-            raw_samples=int(p.raw_samples),
-        )
-
-        result = rahbo_optimize(
-            eval_one=test_eval_one,
-            bounds=bounds,
-            n_init=int(p.n_init),
-            n_iter=int(p.n_iter),
-            cfg=cfg,
-            seed=int(p.seed),
-        )
-
-        xb = result["x_best"]
-        return {
-            "x_best_0": float(xb[0].item()),
-            "x_best_1": float(xb[1].item()),
-            "y_best_mean": float(result["y_best"].item()),
-            "var_best": float(result["var_best"].item()),
-        }
-
-
-
-if __name__ == "__main__":
-    
-    alphas = [0.0, 0.5]
-    beta_fs = [0.5, 1.0]
-    beta_vars = [0.5, 1.0]
-
-    for a in alphas:
-        for bf in beta_fs:
-            for bv in beta_vars:
-                RAHBOSweep().run(alpha=a, beta_f=bf, beta_var=bv, verbose=False)
