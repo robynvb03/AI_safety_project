@@ -5,40 +5,32 @@ import rahbo
 import steer
 from steer import *
 
-
-
-def test_eval_one(x: torch.Tensor) -> float:
-    """
+"""def test_eval_one(x: torch.Tensor) -> float:
     f(x, y) = -(x^2 + y^2) + noise
     - Maximum at (0, 0)
     - Noise (jitter) increases slightly with radius
-    """
     x1, x2 = x.tolist()
     mean = -(x1 ** 2 + x2 ** 2)
     radius = math.sqrt(x1**2 + x2**2)
     noise_std = 0.05 + 0.2 * radius
-    return mean + noise_std * torch.randn(1).item()
+    return mean + noise_std * torch.randn(1).item()"""
 
 def classify(out_file, steering_vector=None):
-    # Dummy classifier: just sum steering vector
-    if steering_vector is None:
-        raise ValueError("Dummy classifier requires steering_vector")
-
+    # Dummy classifier
     return float(steering_vector.sum().item())
 
 
 def black_box_steering(steering_vector, prompt=PROMPT, m=REPETITIONS, out_file=OUTPUT_FILE):
-
     gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
     _ = gen(prompt, steering_vector, m=m, out_file=out_file)
-    score = score = classify(out_file, steering_vector)
+    score = classify(out_file, steering_vector)
+    return score
 
-    return  score
 
 
 class RAHBOSweep(pytry.Trial):
     def params(self):
-        # sweep these from CLI or loops
+
         self.param("risk aversion", alpha=1.0)
         self.param("exploration on mean", beta_f=2.0)
         self.param("conservativeness on variance", beta_var=2.0)
@@ -101,4 +93,4 @@ if __name__ == "__main__":
     for a in alphas:
         for bf in beta_fs:
             for bv in beta_vars:
-                RAHBOSweep().run(alpha=a, beta_f=bf, beta_var=bv, verbose=False)
+                RAHBOSweep().run(alpha=a, beta_f=bf, beta_var=bv, verbose=True)

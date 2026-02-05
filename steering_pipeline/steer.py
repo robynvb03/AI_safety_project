@@ -7,7 +7,6 @@ STEERING_LAYER = 6 #gpt2-small has 12 layers
 REPETITIONS = 3
 OUTPUT_FILE = "outputs.txt"
 STEERING_VEC_FILE = "steering_vec.txt"
-PROMPT_FILE = "prompt.txt"
 PROMPT = "Hello my name is"
 
 model = HookedTransformer.from_pretrained(MODEL_NAME)
@@ -39,11 +38,6 @@ class prompt_generator:
             for x in v.tolist():
                 f.write(f"{x}\n")
 
-        # save prompt to file
-        with open(PROMPT_FILE, "w", encoding="utf-8") as f:
-            f.write(prompt + "\n")
-
-
         delta = v.to(self.model.cfg.device).view(1, 1, -1)
         hook_name = f"blocks.{self.steering_layer}.hook_resid_pre"
 
@@ -69,14 +63,3 @@ class prompt_generator:
 
         return outputs
 
-def black_box_steering(steering_vector, prompt=PROMPT, m=REPETITIONS, out_file=OUTPUT_FILE):
-
-    gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
-    _ = gen(prompt, steering_vector, m=m, out_file=out_file)
-    score = classify(out_file)
-
-    return score
-
- 
-if __name__ == "__main__":
-    black_box_steering(STEERING_VECTOR1)

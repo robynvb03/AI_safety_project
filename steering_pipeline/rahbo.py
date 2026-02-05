@@ -53,6 +53,7 @@ class RiskAverseUCB(AnalyticAcquisitionFunction):
 
         return ucb_f - self.alpha * lcb_var
 
+
 def ensure_2d(Y: torch.Tensor) -> torch.Tensor:
     # makes sure Y is (n,1) not (n,) or scalar
     if Y.dim() == 0:
@@ -71,11 +72,10 @@ def evaluate_k(eval_one: EvalOneFn, x: torch.Tensor, k: int, dtype, device) -> t
         else:
             y = y.to(dtype=dtype, device=device)
 
-        y = y.reshape(1, 1)  # always (1,1), even if y is scalar or (1,)
+        y = y.reshape(1, 1)  
         ys.append(y)
 
-    return torch.cat(ys, dim=0)  # always (k,1)
-
+    return torch.cat(ys, dim=0)
 
 
 def fit_mean_gp(X: torch.Tensor, Y_mean: torch.Tensor, Yvar_mean: torch.Tensor) -> SingleTaskGP:
@@ -96,7 +96,7 @@ def fit_logvar_gp(X: torch.Tensor, S2: torch.Tensor) -> SingleTaskGP:
 
 
 def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_iter: int, cfg: RAHBOConfig, seed: int = 0, ) -> Dict[str, Any]:
-
+    
     torch.manual_seed(seed)
     device = bounds.device
     dtype = bounds.dtype
@@ -107,9 +107,9 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
     Y_mean_list = []
     S2_list = []
     for i in range(n_init):
-        yk = evaluate_k(eval_one, X[i], cfg.k, dtype, device)          # (k,1)
-        m = yk.mean(dim=0)                                             # (1,1)
-        s2 = yk.var(dim=0, unbiased=True).clamp_min(1e-12)             # (1,1)
+        yk = evaluate_k(eval_one, X[i], cfg.k, dtype, device)          
+        m = yk.mean(dim=0)                                             
+        s2 = yk.var(dim=0, unbiased=True).clamp_min(1e-12)           
         Y_mean_list.append(m)
         S2_list.append(s2)
 
