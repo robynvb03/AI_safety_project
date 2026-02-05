@@ -2,7 +2,9 @@ import torch
 import math
 import pytry
 import rahbo
-import steering
+import steer
+from steer import *
+
 
 
 def test_eval_one(x: torch.Tensor) -> float:
@@ -17,14 +19,21 @@ def test_eval_one(x: torch.Tensor) -> float:
     noise_std = 0.05 + 0.2 * radius
     return mean + noise_std * torch.randn(1).item()
 
+def classify(out_file, steering_vector=None):
+    # Dummy classifier: just sum steering vector
+    if steering_vector is None:
+        raise ValueError("Dummy classifier requires steering_vector")
+
+    return float(steering_vector.sum().item())
+
 
 def black_box_steering(steering_vector, prompt=PROMPT, m=REPETITIONS, out_file=OUTPUT_FILE):
 
     gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
     _ = gen(prompt, steering_vector, m=m, out_file=out_file)
-    score = classify(out_file)
+    score = score = classify(out_file, steering_vector)
 
-    return score
+    return  score
 
 
 class RAHBOSweep(pytry.Trial):
@@ -39,10 +48,10 @@ class RAHBOSweep(pytry.Trial):
         self.param("num restarts", num_restarts=15)
         self.param("raw samples", raw_samples=256)
 
-        self.param("n_init", n_init=8)
-        self.param("n_iter", n_iter=50)
+        self.param("n_init", n_init=5)
+        self.param("n_iter", n_iter=5)
 
-        self.param("device", device="cpu")
+        self.param("device", device="cuda")
         self.param("dtype", dtype="double")
 
     def evaluate(self, p):
@@ -50,8 +59,8 @@ class RAHBOSweep(pytry.Trial):
         dtype = torch.double if p.dtype == "double" else torch.float
 
         bounds = torch.tensor(
-            [[-1.0, -1.0],
-             [ 1.0,  1.0]],
+            [ [-1] * 768,
+            [1] * 768 ],
             device=device,
             dtype=dtype,
         )
@@ -67,7 +76,7 @@ class RAHBOSweep(pytry.Trial):
         )
 
         result = rahbo.rahbo_optimize(
-            eval_one=test_eval_one,
+            eval_one=black_box_steering,
             bounds=bounds,
             n_init=int(p.n_init),
             n_iter=int(p.n_iter),
@@ -77,22 +86,19 @@ class RAHBOSweep(pytry.Trial):
 
         xb = result["x_best"]
         return {
-            "x_best_0": float(xb[0].item()),
-            "x_best_1": float(xb[1].item()),
+            "x_best": xb.tolist(),
             "y_best_mean": float(result["y_best"].item()),
             "var_best": float(result["var_best"].item()),
         }
 
 
-
 if __name__ == "__main__":
 
-    alphas = [0.0, 0.5]
-    beta_fs = [0.5, 1.0]
-    beta_vars = [0.5, 1.0]
+    alphas = [0.0]
+    beta_fs = [0.5]
+    beta_vars = [0.5]
 
     for a in alphas:
         for bf in beta_fs:
             for bv in beta_vars:
                 RAHBOSweep().run(alpha=a, beta_f=bf, beta_var=bv, verbose=False)
-
