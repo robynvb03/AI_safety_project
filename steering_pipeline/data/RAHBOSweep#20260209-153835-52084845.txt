@@ -1,0 +1,17 @@
+seed = 1
+alpha = 0.5
+beta_f = 0.5
+beta_var = 0.5
+k = 5
+lambda_reg = 1e-06
+num_restarts = 15
+raw_samples = 256
+n_init = 8
+n_iter = 50
+device = 'cuda'
+dtype = 'double'
+
+x_best_0 = -0.08576785604994415
+x_best_1 = -0.04511017287260642
+y_best_mean = 0.07071346115694711
+var_best = 0.005112113938221982

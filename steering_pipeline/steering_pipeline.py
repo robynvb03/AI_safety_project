@@ -1,9 +1,12 @@
 import torch
 import math
 import pytry
+from sklearn import svm
+import pickle
 import rahbo
 import steer
 from steer import *
+from classify import *
 
 """def test_eval_one(x: torch.Tensor) -> float:
     f(x, y) = -(x^2 + y^2) + noise
@@ -15,17 +18,12 @@ from steer import *
     noise_std = 0.05 + 0.2 * radius
     return mean + noise_std * torch.randn(1).item()"""
 
-def classify(out_file, steering_vector=None):
-    # Dummy classifier
-    return float(steering_vector.sum().item())
-
 
 def black_box_steering(steering_vector, prompt=PROMPT, m=REPETITIONS, out_file=OUTPUT_FILE):
     gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
     _ = gen(prompt, steering_vector, m=m, out_file=out_file)
     score = classify(out_file, steering_vector)
     return score
-
 
 
 class RAHBOSweep(pytry.Trial):
@@ -92,5 +90,5 @@ if __name__ == "__main__":
 
     for a in alphas:
         for bf in beta_fs:
-            for bv in beta_vars:
+            for bv in beta_vars: 
                 RAHBOSweep().run(alpha=a, beta_f=bf, beta_var=bv, verbose=True)
