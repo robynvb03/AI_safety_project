@@ -99,13 +99,22 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
     dtype = bounds.dtype
     d = bounds.shape[1]
 
-        # ---- logging raw samples (iter, sample reward) to CSV ----
     log_path = "rahbo_samples.csv"
     write_header = not os.path.exists(log_path)
     log_f = open(log_path, "a", newline="")
     log_writer = csv.writer(log_f)
     if write_header:
-        log_writer.writerow(["iter", "sample_idx", "reward", "risk_reward"] + [f"x{j}" for j in range(d)])
+        log_writer.writerow(["iter", "reward","variance",  "risk_reward"])
+    log_f.flush()
+
+    samples_path = "rahbo_samples_raw.csv"
+    write_header_samples = not os.path.exists(samples_path)
+    samples_f = open(samples_path, "a", newline="")
+    samples_writer = csv.writer(samples_f)
+
+    if write_header_samples:
+        samples_writer.writerow(
+            ["iter", "sample_idx", "reward"])
 
 
     X = bounds[0] + (bounds[1] - bounds[0]) * torch.rand(n_init, d, device=device, dtype=dtype)
@@ -114,17 +123,15 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
     S2_list = []
     for i in range(n_init):
         yk = evaluate_k(eval_one, X[i], cfg.k, dtype, device)
-        risk_reward = m.item() - cfg.alpha * s2.item()
-
         for s in range(cfg.k):
-            log_writer.writerow(
-            [0, s, float(yk[s].item()), float(risk_reward)] +
-            [float(v) for v in X[i].tolist()]
-            )
-        m = yk.mean(dim=0)                                             
+            samples_writer.writerow( [0, s, float(yk[s].item())])
+
+        m = yk.mean(dim=0)  
         s2 = yk.var(dim=0, unbiased=True).clamp_min(1e-12)           
         Y_mean_list.append(m)
         S2_list.append(s2)
+        risk_reward = m.item() - cfg.alpha * s2.item()
+        log_writer.writerow([0, float(m.item()), float(s2.item()), float(risk_reward)])                                       
 
     Y_mean = torch.cat(Y_mean_list, dim=0)    # (n,1)
     S2 = torch.cat(S2_list, dim=0)            # (n,1)
@@ -162,15 +169,13 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
 
         yk = evaluate_k(eval_one, x_next, cfg.k, dtype, device)
 
+        for s in range(cfg.k):
+            samples_writer.writerow( [t, s, float(yk[s].item())])
+
         m_next = yk.mean(dim=0)                                   # (1,1)
         s2_next = yk.var(dim=0, unbiased=True).clamp_min(1e-12)    # (1,1)
         risk_reward_next = m_next.item() - cfg.alpha * s2_next.item()
-        for s in range(cfg.k):
-        log_writer.writerow(
-            [t, s, float(yk[s].item()), float(risk_reward_next)] +
-            [float(v) for v in x_next.tolist()]
-        )
-
+        log_writer.writerow([t, float(m_next.item()), float(s2_next.item()), float(risk_reward_next)])
 
 
         # Append
@@ -206,7 +211,7 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
         print( f"iter {t:02d} | " f"meanbest={Y_mean[best_i_mean].item():.4f}, var@meanbest={S2[best_i_mean].item():.4e} | " f"riskbest_mean={Y_mean[best_i_risk].item():.4f}, riskbest_var={S2[best_i_risk].item():.4e} | " f"new_mean={m_next.item():.4f}, new_var={s2_next.item():.3e}")
 
     iters = list(range(1, n_iter + 1))
-        log_f.close()
+    log_f.close()
 
 
     # Plot 1: Risk-aware best so far
