@@ -24,16 +24,16 @@ def prompt_stream_from_csv(csv_path: str, prompt_col: str = "prompt"):
             if p:
                 yield {"prompt": p}
 
-ds_stream = prompt_stream_from_csv("steering_test.csv", prompt_col="prompt")
 
 class prompt_generator:
     def __init__(self, model_name: str = MODEL_NAME, steering_layer: int = STEERING_LAYER):
         self.model_name = model_name
         self.steering_layer = steering_layer
         self.model = model
-
-    def __call__(self, steering_vector, m: int, out_file: str = OUTPUT_FILE):
+ 
+    def __call__(self, steering_vector, m: int = REPETITIONS, out_file: str = OUTPUT_FILE):
         # normalize steering vector
+        ds_stream = prompt_stream_from_csv("small_test.csv", prompt_col="prompt")
         v = steering_vector
         if not torch.is_tensor(v):
             v = torch.tensor(v, dtype=torch.float32)
@@ -67,12 +67,12 @@ class prompt_generator:
                         temperature=0.9,
                     )
                 
-                """ PROMPT REMOVAL
+                PROMPT REMOVAL
                 prompt_tokens = self.model.to_tokens(example["prompt"])
                 gen_tokens = text1[:, prompt_tokens.shape[1]:]
-                text = self.model.to_string(gen_tokens)[0]"""
-                with open(out_file, "w", encoding="utf-8") as f:
-                    f.write(text.replace("\n", " ") + "\n")
+                text = self.model.to_string(gen_tokens)[0]
+                """with open(out_file, "w", encoding="utf-8") as f:
+                    f.write(text.replace("\n", " ") + "\n")"""
             
                 outputs.append(text)
 
@@ -90,3 +90,4 @@ if __name__ == "__main__":
     gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
     _ = gen([0] * 768, m=REPETITIONS, out_file=OUTPUT_FILE)
 
+ 
