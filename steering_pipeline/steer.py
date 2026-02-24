@@ -23,8 +23,7 @@ def prompt_stream_from_csv(csv_path: str, prompt_col: str = "prompt"):
             p = (row.get(prompt_col) or "").strip()
             if p:
                 yield {"prompt": p}
-
-
+ 
 class prompt_generator:
     def __init__(self, model_name: str = MODEL_NAME, steering_layer: int = STEERING_LAYER):
         self.model_name = model_name
@@ -61,13 +60,13 @@ class prompt_generator:
         for example in ds_stream:
             for _ in range(m):
                 with self.model.hooks(fwd_hooks=[(hook_name, steering_hook)]):
-                    text = self.model.generate(
+                    text1 = self.model.generate(
                         example["prompt"],
                         max_new_tokens=100,
                         temperature=0.9,
+                        return_type="tokens",
                     )
                 
-                PROMPT REMOVAL
                 prompt_tokens = self.model.to_tokens(example["prompt"])
                 gen_tokens = text1[:, prompt_tokens.shape[1]:]
                 text = self.model.to_string(gen_tokens)[0]

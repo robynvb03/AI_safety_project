@@ -8,22 +8,12 @@ import steer
 from steer import *
 from classify import *
 
-"""def test_eval_one(x: torch.Tensor) -> float:
-    f(x, y) = -(x^2 + y^2) + noise
-    - Maximum at (0, 0)
-    - Noise (jitter) increases slightly with radius
-    x1, x2 = x.tolist()
-    mean = -(x1 ** 2 + x2 ** 2)
-    radius = math.sqrt(x1**2 + x2**2)
-    noise_std = 0.05 + 0.2 * radius
-    return mean + noise_std * torch.randn(1).item()"""
 
-
-def black_box_steering(steering_vector, prompt=PROMPT, m=REPETITIONS, out_file=OUTPUT_FILE):
+def black_box_steering(steering_vector):
     gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
-    _ = gen(prompt, steering_vector, m=m, out_file=out_file)
-    score = classify(out_file, steering_vector)
-    return score
+    _ = gen(steering_vector,)
+    score = classify(OUTPUT_FILE)
+    return score 
 
 
 class RAHBOSweep(pytry.Trial):
@@ -33,13 +23,13 @@ class RAHBOSweep(pytry.Trial):
         self.param("exploration on mean", beta_f=2.0)
         self.param("conservativeness on variance", beta_var=2.0)
 
-        self.param("k repeats per x", k=5)
+        self.param("k repeats per x", k=2)
         self.param("lambda reg", lambda_reg=1e-6)
-        self.param("num restarts", num_restarts=15)
-        self.param("raw samples", raw_samples=256)
+        self.param("num restarts", num_restarts=20)
+        self.param("raw samples", raw_samples=250)
 
         self.param("n_init", n_init=5)
-        self.param("n_iter", n_iter=5)
+        self.param("n_iter", n_iter=10)
 
         self.param("device", device="cuda")
         self.param("dtype", dtype="double")
@@ -49,8 +39,8 @@ class RAHBOSweep(pytry.Trial):
         dtype = torch.double if p.dtype == "double" else torch.float
 
         bounds = torch.tensor(
-            [ [-1] * 768,
-            [1] * 768 ],
+            [ [-10] * 768,
+            [10] * 768 ],
             device=device,
             dtype=dtype,
         )
@@ -84,9 +74,9 @@ class RAHBOSweep(pytry.Trial):
 
 if __name__ == "__main__":
 
-    alphas = [0.0]
-    beta_fs = [0.5]
-    beta_vars = [0.5]
+    alphas = [0.5]
+    beta_fs = [1.5]
+    beta_vars = [1.0]
 
     for a in alphas:
         for bf in beta_fs:
