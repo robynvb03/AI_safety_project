@@ -23,13 +23,13 @@ class RAHBOSweep(pytry.Trial):
         self.param("exploration on mean", beta_f=2.0)
         self.param("conservativeness on variance", beta_var=2.0)
 
-        self.param("k repeats per x", k=2)
+        self.param("k repeats per x", k=5)
         self.param("lambda reg", lambda_reg=1e-6)
         self.param("num restarts", num_restarts=20)
         self.param("raw samples", raw_samples=250)
 
-        self.param("n_init", n_init=5)
-        self.param("n_iter", n_iter=10)
+        self.param("n_init", n_init=30)
+        self.param("n_iter", n_iter=200)
 
         self.param("device", device="cuda")
         self.param("dtype", dtype="double")

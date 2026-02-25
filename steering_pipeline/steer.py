@@ -6,7 +6,7 @@ import csv
 
 MODEL_NAME = "gpt2-small"
 STEERING_LAYER = 6 #gpt2-small has 12 layers
-REPETITIONS = 2
+REPETITIONS = 10
 OUTPUT_FILE = "outputs.txt"
 STEERING_VEC_FILE = "steering_vec.txt"
 
