@@ -29,8 +29,8 @@ def classify(out_file):
             score = get_classification(line.strip(), llm2, svm_model)
             scores.append(score)
         avg_score = sum(scores) / len(scores) if scores else 0
-        #print scores for debugging
+        """#print scores for debugging
         print(f"Classification scores for each line: {scores}")
-        print(f"Average classification score: {avg_score}")
+        print(f"Average classification score: {avg_score}")"""
         return avg_score    
 
