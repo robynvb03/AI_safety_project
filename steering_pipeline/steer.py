@@ -4,7 +4,7 @@ from transformer_lens.hook_points import HookPoint
 import json
 import csv
 
-MODEL_NAME = "gpt2-small"
+MODEL_NAME = "EleutherAI/gpt-neo-125M"
 STEERING_LAYER = 6 #gpt2-small has 12 layers
 REPETITIONS = 1
 OUTPUT_FILE = "outputs.txt"
@@ -85,6 +85,6 @@ class prompt_generator:
  
 if __name__ == "__main__":
     gen = prompt_generator(model_name=MODEL_NAME, steering_layer=STEERING_LAYER)
-    _ = gen([0] * 768, m=REPETITIONS, out_file=OUTPUT_FILE)
+    _ = gen([0] * model.cfg.d_model, m=REPETITIONS, out_file=OUTPUT_FILE)
 
  
