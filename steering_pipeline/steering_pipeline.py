@@ -1,7 +1,7 @@
 import torch
 import math
 import pytry
-from sklearn import svm
+from sklearn import svm 
 import pickle
 import rahbo
 import steer
@@ -28,8 +28,8 @@ class RAHBOSweep(pytry.Trial):
         self.param("num restarts", num_restarts=20)
         self.param("raw samples", raw_samples=250)
 
-        self.param("n_init", n_init=10)
-        self.param("n_iter", n_iter=10)
+        self.param("n_init", n_init=5)
+        self.param("n_iter", n_iter=5)
 
         self.param("device", device="cuda")
         self.param("dtype", dtype="double")
@@ -82,3 +82,4 @@ if __name__ == "__main__":
         for bf in beta_fs:
             for bv in beta_vars: 
                 RAHBOSweep().run(alpha=a, beta_f=bf, beta_var=bv, verbose=True)
+  

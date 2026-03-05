@@ -12,8 +12,6 @@ STEERING_VEC_FILE = "steering_vec.txt"
 
 model = HookedTransformer.from_pretrained(MODEL_NAME)
 
-
-
 def prompt_stream_from_csv(csv_path: str, prompt_col: str = "prompt"):
     with open(csv_path, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)

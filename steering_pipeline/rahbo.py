@@ -62,7 +62,7 @@ class RiskAverseUCB(AnalyticAcquisitionFunction):
 def ensure_2d(Y: torch.Tensor) -> torch.Tensor:
     if Y.dim() == 0:
         return Y.view(1, 1)
-    if Y.dim() == 1:
+    if Y.dim() == 1: 
         return Y.unsqueeze(-1)
     return Y
 
@@ -99,8 +99,8 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
     torch.manual_seed(seed)
     device = bounds.device
     dtype = bounds.dtype
-    d = bounds.shape[1]
-
+    d = bounds.shape[1] 
+      
     #tracing support 
     log_path = "rahbo_samples.csv"
     write_header = not os.path.exists(log_path)
@@ -114,10 +114,17 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
     write_header_samples = not os.path.exists(samples_path)
     samples_f = open(samples_path, "a", newline="")
     samples_writer = csv.writer(samples_f)
-
     if write_header_samples:
         samples_writer.writerow(
             ["iter", "sample_idx", "reward"])
+
+    vec_path = "vectors.csv"
+    write_header_vec = not os.path.exists(vec_path)
+    vec_f= open(vec_path, "a", newline="")
+    vec_writer = csv.writer(vec_f)
+    if write_header_vec:
+        vec_writer.writerow(
+            ["iter", "vector"])
 
 
     X = bounds[0] + (bounds[1] - bounds[0]) * torch.rand(n_init, d, device=device, dtype=dtype)
@@ -179,7 +186,7 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
         s2_next = yk.var(dim=0, unbiased=True).clamp_min(1e-12)    # (1,1)
         risk_reward_next = m_next.item() - cfg.alpha * s2_next.item()
         log_writer.writerow([t, float(m_next.item()), float(s2_next.item()), float(risk_reward_next)])
-
+        vec_writer.writerow([t, x_next.cpu().numpy().tolist()])
 
         # Append
         X = torch.cat([X, x_next.view(1, -1)], dim=0)
@@ -212,7 +219,9 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
 
         #debug printing 
         print( f"iter {t:02d} | " f"meanbest={Y_mean[best_i_mean].item():.4f}, var@meanbest={S2[best_i_mean].item():.4e} | " f"riskbest_mean={Y_mean[best_i_risk].item():.4f}, riskbest_var={S2[best_i_risk].item():.4e} | " f"new_mean={m_next.item():.4f}, new_var={s2_next.item():.3e}")
-
+        if Y_mean[best_i_risk].item() >= 1.98:
+            break
+    
     iters = list(range(1, n_iter + 1))
     log_f.close()
 
@@ -254,3 +263,4 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
         "y_best": Y_mean[final_best_i_risk],
         "var_best": S2[final_best_i_risk],
     }
+ 
