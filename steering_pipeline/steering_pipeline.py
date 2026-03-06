@@ -30,13 +30,13 @@ class RAHBOSweep(pytry.Trial):
 
         self.param("n_init", n_init=30)
         self.param("n_iter", n_iter=100)
-
+ 
         self.param("device", device="cuda")
         self.param("dtype", dtype="double")
 
     def evaluate(self, p):
         device = torch.device(p.device)
-        dtype = torch.double if p.dtype == "double" else torch.float
+        dtype = torch.double if p.dtype == "double" else torch.float 
 
         bounds = torch.tensor(
             [ [-10] * 768,
@@ -74,7 +74,7 @@ class RAHBOSweep(pytry.Trial):
 
 if __name__ == "__main__":
 
-    alphas = [0.5]
+    alphas = [2.0]
     beta_fs = [1.5]
     beta_vars = [1.0]
 
