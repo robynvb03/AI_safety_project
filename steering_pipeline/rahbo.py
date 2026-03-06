@@ -18,6 +18,7 @@ import os
 EvalOneFn = Callable[[torch.Tensor], float]
 
 @dataclass
+
 class RAHBOConfig:
     alpha: float = 1.0
     beta_f: float = 2.0
@@ -125,7 +126,6 @@ def rahbo_optimize( eval_one: EvalOneFn, bounds: torch.Tensor, n_init: int, n_it
     if write_header_vec:
         vec_writer.writerow(
             ["iter", "vector"])
-
 
     X = bounds[0] + (bounds[1] - bounds[0]) * torch.rand(n_init, d, device=device, dtype=dtype)
 

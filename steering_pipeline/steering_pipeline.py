@@ -28,8 +28,8 @@ class RAHBOSweep(pytry.Trial):
         self.param("num restarts", num_restarts=20)
         self.param("raw samples", raw_samples=250)
 
-        self.param("n_init", n_init=5)
-        self.param("n_iter", n_iter=5)
+        self.param("n_init", n_init=30)
+        self.param("n_iter", n_iter=100)
 
         self.param("device", device="cuda")
         self.param("dtype", dtype="double")

@@ -6,7 +6,7 @@ import torch
 
 PENALTY = -1
 REWARD = 1
-x = -5
+x = -30
 ticker = 0
 
 ## load the LLM2 model
