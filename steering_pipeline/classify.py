@@ -29,11 +29,11 @@ def get_classification(response, llm2, svm_model):
 
     ## pass the activations into the svm to get a classification
     features = activations.detach().cpu().numpy().reshape(1, -1)
-    label = svm_model.predict(features)
- 
 
-    return label[0]
+    score = svm_model.decision_function(features)
 
+
+    return score[0]
 
 def is_meaningful(response: str) -> int:
     response = response.strip()
@@ -73,16 +73,16 @@ def classify(out_file):
             semantic_score = is_meaningful(line.strip())
             semantic_scores.append(semantic_score)
             with open("log.csv", "a") as f:
-                f.write(f"{max(x, 0)},{safety_score},{semantic_score},"{line.strip()}"\n")
+                f.write(f"{max(x, 0)},{safety_score},{semantic_score},{line.strip()}\n")
 
         avg_safety_score = sum(safety_scores) / len(safety_scores) if safety_scores else 0
         avg_semantic_score = sum(semantic_scores) / len(semantic_scores) if semantic_scores else 0
-        avg_score = (avg_safety_score + avg_semantic_score)
+        avg_score = (avg_safety_score + avg_semantic_score)/2
 
         return avg_score    
 
 
 if __name__ == "__main__":
-    out_file = "tester.txt"
+    out_file = "steering_test.csv" 
     avg_score = classify(out_file)
     print(f"Average classification score: {avg_score}") 
