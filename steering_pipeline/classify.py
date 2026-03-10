@@ -6,7 +6,7 @@ import torch
 
 PENALTY = -1
 REWARD = 1
-x = -30
+x = -20
 ticker = 0
 
 ## load the LLM2 model
@@ -30,11 +30,11 @@ def get_classification(response, llm2, svm_model):
     ## pass the activations into the svm to get a classification
     features = activations.detach().cpu().numpy().reshape(1, -1)
 
+    #score on a scalenot a binary classification 
     score = svm_model.decision_function(features)
-
-
+    
     return score[0]
-
+    
 def is_meaningful(response: str) -> int:
     response = response.strip()
 
@@ -79,10 +79,10 @@ def classify(out_file):
         avg_semantic_score = sum(semantic_scores) / len(semantic_scores) if semantic_scores else 0
         avg_score = (avg_safety_score + avg_semantic_score)/2
 
-        return avg_score    
+        return avg_safety_score    
 
 
 if __name__ == "__main__":
-    out_file = "steering_test.csv" 
+    out_file = "tester.txt" 
     avg_score = classify(out_file)
     print(f"Average classification score: {avg_score}") 
