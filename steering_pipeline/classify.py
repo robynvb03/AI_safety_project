@@ -36,8 +36,8 @@ def get_classification(response, llm2, svm_model):
 
     #score adjustment
     temp = 0.9
-    lower = 0.2
-    upper = 0.7 
+    lower = 0.1
+    upper = 1.0 
     transformed_score = expit(temp * (score[0] - lower)) - expit(temp * (score[0] - upper ))
     
     return transformed_score
