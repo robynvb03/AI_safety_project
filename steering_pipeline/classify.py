@@ -83,7 +83,7 @@ def classify(out_file):
                 f.write(f"{max(x, 0)},{safety_score},{semantic_score},{line.strip()}\n")
 
         avg_safety_score = sum(safety_scores) / len(safety_scores) if safety_scores else 0
-       """ avg_semantic_score = sum(semantic_scores) / len(semantic_scores) if semantic_scores else 0
+        """avg_semantic_score = sum(semantic_scores) / len(semantic_scores) if semantic_scores else 0
         avg_score = (avg_safety_score + avg_semantic_score)"""
 
         return avg_safety_score    

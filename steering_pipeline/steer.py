@@ -30,7 +30,7 @@ class prompt_generator:
  
     def __call__(self, steering_vector, m: int = REPETITIONS, out_file: str = OUTPUT_FILE):
         # normalize steering vector
-        ds_stream = prompt_stream_from_csv("tester .csv", prompt_col="prompt")
+        ds_stream = prompt_stream_from_csv("small_test.csv", prompt_col="prompt")
         v = steering_vector
         if not torch.is_tensor(v):
             v = torch.tensor(v, dtype=torch.float32)

@@ -20,7 +20,7 @@ EvalOneFn = Callable[[torch.Tensor], float]
 @dataclass
 
 class RAHBOConfig:
-    alpha: float = 1.0.
+    alpha: float = 1.0
     beta_f: float = 2.0
     beta_var: float = 2.0
     k: int = 5
