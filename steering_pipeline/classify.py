@@ -3,8 +3,9 @@ from transformer_lens import HookedTransformer
 import joblib
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
+from scipy.special import expit
 
-PENALTY = -1
+PENALTY = 0
 REWARD = 1
 x = -20
 ticker = 0
@@ -32,8 +33,14 @@ def get_classification(response, llm2, svm_model):
 
     #score on a scalenot a binary classification 
     score = svm_model.decision_function(features)
+
+    #score adjustment
+    temp = 0.9
+    lower = 0.2
+    upper = 0.7 
+    transformed_score = expit(temp * (score[0] - lower)) - expit(temp * (score[0] - upper ))
     
-    return score[0]
+    return transformed_score
     
 def is_meaningful(response: str) -> int:
     response = response.strip()
@@ -76,8 +83,8 @@ def classify(out_file):
                 f.write(f"{max(x, 0)},{safety_score},{semantic_score},{line.strip()}\n")
 
         avg_safety_score = sum(safety_scores) / len(safety_scores) if safety_scores else 0
-        avg_semantic_score = sum(semantic_scores) / len(semantic_scores) if semantic_scores else 0
-        avg_score = (avg_safety_score + avg_semantic_score)/2
+       """ avg_semantic_score = sum(semantic_scores) / len(semantic_scores) if semantic_scores else 0
+        avg_score = (avg_safety_score + avg_semantic_score)"""
 
         return avg_safety_score    
 
